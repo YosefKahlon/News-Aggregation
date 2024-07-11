@@ -1,8 +1,10 @@
 import os
 from dotenv import load_dotenv
 from fastapi import APIRouter, HTTPException, Body
+from pydantic import BaseModel
 from models import User, UserPreferences
 from pymongo import MongoClient
+import requests
 
 # Load environment variables from .env file
 load_dotenv()
@@ -14,6 +16,9 @@ if not mongo_uri:
 client = MongoClient(mongo_uri)
 db = client.news_db
 user_collection = db.users
+
+class NotifyRequest(BaseModel):
+    email: str
 
 user_router = APIRouter()
 
@@ -35,3 +40,48 @@ async def set_preferences(email: str = Body(...), preferences: UserPreferences =
 @user_router.get("/status")
 async def get_status():
     return {"message": "User Service is running"}
+
+@user_router.post("/notify")
+async def notify_user(request: NotifyRequest):
+    email = request.email
+    user = user_collection.find_one({"email": email})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    preferences = user.get("preferences", {})
+    if not preferences:
+        raise HTTPException(status_code=400, detail="User preferences not set")
+
+    categories = preferences.get("categories", [])
+    technologies = preferences.get("technologies", [])
+    communication_channel = preferences.get("communication_channel")
+
+    if not categories and not technologies:
+        raise HTTPException(status_code=400, detail="No categories or technologies specified in preferences")
+
+    # Fetch news based on preferences
+    summaries = []
+    for category in categories:
+        response = requests.get(f"http://news-aggregator-service:8001/news/summarize?category={category}")
+        if response.status_code == 200:
+            summaries.extend(response.json().get("summaries", []))
+
+    # Send the notification
+    if communication_channel == "email":
+        notify_via_email(email, summaries)
+    else:
+        raise HTTPException(status_code=400, detail="Unsupported communication channel")
+
+    return {"message": f"Notification sent to {email}"}
+
+def notify_via_email(email, summaries):
+    subject = "Your Personalized News Summary"
+    message = "\n\n".join([f"Title: {summary['title']}\nSummary: {summary['summary']}\nURL: {summary['url']}" for summary in summaries])
+    data = {
+        "email": email,
+        "subject": subject,
+        "message": message
+    }
+    response = requests.post("http://notification-service:8002/notify/send", json=data)
+    if response.status_code != 200:
+        raise HTTPException(status_code=500, detail="Failed to send email notification")
