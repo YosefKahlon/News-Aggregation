@@ -14,6 +14,7 @@ class Notification(BaseModel):
 
 @notification_router.post("/send")
 async def send_notification(notification: Notification):
+    """Send notification via email"""
     try:
         send_email(notification.email, notification.subject, notification.message)
         return {"message": f"Notification sent to {notification.email}"}
@@ -21,6 +22,7 @@ async def send_notification(notification: Notification):
         raise HTTPException(status_code=500, detail=str(e))
 
 def send_email(to_email: str, subject: str, message: str):
+    """Send email using SMTP"""
     from_email = os.getenv("EMAIL_USER")
     from_password = os.getenv("EMAIL_PASSWORD")
     smtp_server = os.getenv("SMTP_SERVER")
