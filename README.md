@@ -127,6 +127,8 @@ Summarize News
 - Method: GET
 - URL: http://localhost:8001/news/summarize?category=technology
 
+
+
 ## Environment Variables
 ```bash
 MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/news_db?retryWrites=true&w=majority
@@ -154,3 +156,16 @@ pip install pytest requests
 ```bash
 pytest test_integration.py
 ```
+
+
+### Testing Caching with Postman
+First Request (Uncached):
+
+- Method: GET
+- URL: http://localhost:8001/news/fetch?category=technology
+- Send the request and note the response time.
+- 
+Second Request (Cached):
+
+- Immediately after the first request, send the same GET request again.
+- Observe the response time.

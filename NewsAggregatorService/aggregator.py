@@ -3,6 +3,7 @@ import requests
 import os
 import google.generativeai as genai
 import logging
+from aiocache import cached
 
 news_router = APIRouter()
 
@@ -16,6 +17,7 @@ model = genai.GenerativeModel('gemini-1.5-flash')
 logging.basicConfig(level=logging.INFO)
 
 @news_router.get("/fetch")
+@cached(ttl=60)  # Cache for 60 seconds
 async def fetch_news(category: str):
     """Fetch news articles by category"""
     api_key = os.getenv("NEWS_API_KEY")
@@ -30,6 +32,7 @@ async def fetch_news(category: str):
     return response.json()
 
 @news_router.get("/summarize")
+@cached(ttl=60)  # Cache for 60 seconds
 async def summarize_news(category: str):
     """Fetch and summarize news articles by category"""
     news_response = await fetch_news(category)
