@@ -137,3 +137,20 @@ EMAIL_PASSWORD=your_email_password
 SMTP_SERVER=smtp.example.com
 SMTP_PORT=587
 ```
+
+
+## Running Integration Tests
+
+### Overview
+Integration tests simulate user interaction with the endpoints to ensure the system works as expected.
+
+### Setup
+#### Install required libraries
+```bash
+pip install pytest requests
+```
+
+### Running the Tests
+```bash
+pytest test_integration.py
+```
