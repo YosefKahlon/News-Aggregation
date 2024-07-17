@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>News Aggregator</title>
+</head>
+<body>
+    <h1>News Aggregator</h1>
+
+    <h2>Register</h2>
+    <form action="/register" method="post">
+        Email: <input type="email" name="email" id="register-email" required><br>
+        Name: <input type="text" name="name" id="register-name" required><br>
+        <button type="submit">Register</button>
+    </form>
+
+    <h2>Set Preferences</h2>
+    <form action="/preferences" method="post">
+        Email: <input type="email" name="email" id="preferences-email" required><br>
+        Categories (comma-separated): <input type="text" name="categories" required><br>
+        Technologies (comma-separated): <input type="text" name="technologies" required><br>
+        Communication Channel: <input type="text" name="communication_channel" required><br>
+        <button type="submit">Set Preferences</button>
+    </form>
+
+    <h2>Notify</h2>
+    <form action="/notify" method="post">
+        Email: <input type="email" name="email" id="notify-email" required><br>
+        <button type="submit">Notify</button>
+    </form>
+
+    {% if message %}
+    <h3>{{ message }}</h3>
+    {% endif %}
+
+    {% if error %}
+    <h3 style="color: red;">{{ error }}</h3>
+    {% endif %}
+
+    <script>
+        // Clear form fields on successful registration
+        if ("{{ message }}" && "{{ message }}" !== "") {
+            document.getElementById('register-email').value = '';
+            document.getElementById('register-name').value = '';
+            document.getElementById('preferences-email').value = '';
+            document.getElementById('notify-email').value = '';
+        }
+    </script>
+</body>
+</html>

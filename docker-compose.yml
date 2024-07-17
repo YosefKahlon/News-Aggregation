@@ -36,3 +36,13 @@ services:
     container_name: mongo
     ports:
       - "27017:27017"
+
+  ui-service:
+    build: ./UIService
+    container_name: ui_service
+    ports:
+      - "5000:5000"
+    depends_on:
+      - user-service
+      - news-aggregator-service
+      - notification-service
