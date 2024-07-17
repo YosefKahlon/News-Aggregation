@@ -5,6 +5,8 @@ from pydantic import BaseModel
 from models import User, UserPreferences
 from pymongo import MongoClient
 import requests
+from bson import ObjectId
+from aiocache import cached
 
 # Load environment variables from .env file
 load_dotenv()
@@ -17,10 +19,20 @@ client = MongoClient(mongo_uri)
 db = client.news_db
 user_collection = db.users
 
+
 class NotifyRequest(BaseModel):
     email: str
 
+
+class UserResponse(BaseModel):
+    id: str
+    email: str
+    name: str
+    preferences: UserPreferences = None
+
+
 user_router = APIRouter()
+
 
 @user_router.post("/register")
 async def register_user(user: User):
@@ -29,6 +41,7 @@ async def register_user(user: User):
         raise HTTPException(status_code=400, detail="User already registered")
     user_collection.insert_one(user.dict())
     return {"message": "User registered successfully"}
+
 
 @user_router.post("/preferences")
 async def set_preferences(email: str = Body(...), preferences: UserPreferences = Body(...)):
@@ -39,10 +52,13 @@ async def set_preferences(email: str = Body(...), preferences: UserPreferences =
     user_collection.update_one({"email": email}, {"$set": {"preferences": preferences.dict()}})
     return {"message": "Preferences updated successfully"}
 
+
 @user_router.get("/status")
+@cached(ttl=60)  # Cache for 60 seconds
 async def get_status():
     """Check the status of the User Service"""
     return {"message": "User Service is running"}
+
 
 @user_router.post("/notify")
 async def notify_user(request: NotifyRequest):
@@ -78,10 +94,12 @@ async def notify_user(request: NotifyRequest):
 
     return {"message": f"Notification sent to {email}"}
 
+
 def notify_via_email(email, summaries):
     """Send email notification"""
     subject = "Your Personalized News Summary"
-    message = "\n\n".join([f"Title: {summary['title']}\nSummary: {summary['summary']}\nURL: {summary['url']}" for summary in summaries])
+    message = "\n\n".join(
+        [f"Title: {summary['title']}\nSummary: {summary['summary']}\nURL: {summary['url']}" for summary in summaries])
     data = {
         "email": email,
         "subject": subject,
@@ -91,6 +109,7 @@ def notify_via_email(email, summaries):
     if response.status_code != 200:
         raise HTTPException(status_code=500, detail="Failed to send email notification")
 
+
 @user_router.delete("/delete")
 async def delete_user(email: str = Query(...)):
     """Delete a user"""
@@ -99,10 +118,14 @@ async def delete_user(email: str = Query(...)):
         raise HTTPException(status_code=404, detail="User not found")
     return {"message": "User deleted successfully"}
 
+
 @user_router.get("/get")
+@cached(ttl=60)  # Cache for 60 seconds
 async def get_user(email: str = Query(...)):
     """Retrieve user details"""
     user = user_collection.find_one({"email": email})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+
+    user["_id"] = str(user["_id"])
     return {"user": user}

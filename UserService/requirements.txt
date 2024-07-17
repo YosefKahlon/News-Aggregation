@@ -3,3 +3,4 @@ pymongo
 uvicorn
 python-dotenv
 requests
+aiocache
